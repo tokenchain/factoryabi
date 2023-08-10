@@ -1,0 +1,37 @@
+
+
+
+def {{toPythonIdentifier this.languageSpecificName}}(self{{#if this.inputs}}, {{> typed_params inputs_intern=this.inputs}}{{#if (equal this.stateMutability 'payable')}}, wei:int=0{{/if}}{{else}}{{#if (equal this.stateMutability 'payable')}}, wei:int=0{{/if}}{{/if}}) -> {{> call_return_type outputs=this.outputs type='call'~}}:
+    """
+    Implementation of {{toPythonIdentifier this.languageSpecificName}} in contract {{contractName}}
+    Method of the function
+
+    """
+
+    self._fn_{{toPythonIdentifier this.languageSpecificName}}.callback_onfail = self._callback_onfail
+    self._fn_{{toPythonIdentifier this.languageSpecificName}}.callback_onsuccess = self._callback_onsuccess
+    self._fn_{{toPythonIdentifier this.languageSpecificName}}.auto_reciept = self.call_contract_enforce_tx_receipt
+    self._fn_{{toPythonIdentifier this.languageSpecificName}}.gas_limit = self.call_contract_fee_amount
+    self._fn_{{toPythonIdentifier this.languageSpecificName}}.gas_price_wei = self.call_contract_fee_price
+    self._fn_{{toPythonIdentifier this.languageSpecificName}}.debug_method = self.call_contract_debug_flag
+
+    {{#if (equal this.stateMutability 'payable')}}
+    self._fn_{{toPythonIdentifier this.languageSpecificName}}.wei_value = wei
+    {{/if}}
+
+    {{#if (equal this.stateMutability 'nonpayable')}}
+    return self._fn_{{toPythonIdentifier this.languageSpecificName}}{{#if (equal this.stateMutability 'view')}}.block_call({{#if inputs}}{{> params }}{{/if}}){{/if}}{{#if (equal this.stateMutability 'pure')}}.block_call({{#if inputs}}{{> params }}{{/if}}){{/if}}{{#if (equal this.stateMutability 'nonpayable')}}.block_send({{#if inputs}}{{> params }}{{/if}}){{/if}}
+    {{/if}}
+
+    {{#if (equal this.stateMutability 'payable')}}
+    return self._fn_{{toPythonIdentifier this.languageSpecificName}}.block_send({{#if inputs}}{{> params }}, {{/if}}wei)
+    {{/if}}
+
+    {{#if (equal this.stateMutability 'pure')}}
+    return self._fn_{{toPythonIdentifier this.languageSpecificName}}.block_call({{#if inputs}}{{> params }}{{/if}})
+    {{/if}}
+
+
+    {{#if (equal this.stateMutability 'view')}}
+    return self._fn_{{toPythonIdentifier this.languageSpecificName}}.block_call({{#if inputs}}{{> params }}{{/if}})
+    {{/if}}

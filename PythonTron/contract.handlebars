@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+"""Generated wrapper for {{contractName}} Solidity contract."""
+
+# pylint: disable=too-many-arguments
+from datetime import datetime
+import json
+from typing import (  # pylint: disable=unused-import
+    Any,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+from mypy_extensions import TypedDict  # pylint: disable=unused-import
+from hexbytes import HexBytes
+from tronpytool.contract import Contract
+from tronpytool.common.datastructures import AttributeDict
+
+from tronpytool import Tron
+from tronpytool.compile.basecore import ContractMethod, Validator, EventTracker
+
+
+# Try to import a custom validator class definition; if there isn't one,
+# declare one that we can instantiate for the default argument to the
+# constructor for {{contractName}} below.
+try:
+    # both mypy and pylint complain about what we're doing here, but this
+    # works just fine, so their messages have been disabled here.
+    from . import (  # type: ignore # pylint: disable=import-self
+        {{contractName}}Validator,
+    )
+except ImportError:
+
+    class {{contractName}}Validator(  # type: ignore
+        Validator
+    ):
+        """No-op input validator."""
+
+try:
+    from .middleware import MIDDLEWARE  # type: ignore
+except ImportError:
+    pass
+
+
+{{tupleDefinitions ABIString}}
+
+{{#each methods}}
+{{> method_class contractName=../contractName}}
+{{/each}}
+
+{{#each events}}
+{{> event_class contractName=../contractName}}
+{{/each}}
+
+
+# pylint: disable=too-many-public-methods,too-many-instance-attributes
+class {{contractName}}:
+    """Wrapper class for {{contractName}} Solidity contract.{{docBytesIfNecessary ABIString}}"""
+{{#each methods}}
+    _fn_{{toPythonIdentifier this.languageSpecificName}}: {{toPythonClassname this.languageSpecificName}}Method
+    """Constructor-initialized instance of
+    :class:`{{toPythonClassname this.languageSpecificName}}Method`.
+    """
+{{/each}}
+
+{{#each events}}
+    _ev_{{toPythonIdentifier this.languageSpecificName}}: {{toPythonClassname this.languageSpecificName}}Tracker
+    """Constructor-initialized instance of
+    :class:`{{toPythonClassname this.languageSpecificName}}Tracker`.
+    """
+{{/each}}
+
+    call_contract_fee_amount:int
+
+    call_contract_debug_flag:bool
+
+
+    def __init__(
+        self,
+        tron_provider: Tron,
+        contract_address: str,
+        validator: {{contractName}}Validator = None,
+    ):
+        """Get an instance of wrapper for smart contract.
+
+        :param tron_provider: Either an instance of `web3.Web3`:code: or
+            `web3.providers.base.BaseProvider`:code:
+        :param contract_address: where the contract has been deployed
+        :param validator: for validation of method inputs.
+        """
+        # pylint: disable=too-many-statements
+
+        self.contract_address = contract_address
+
+        if not validator:
+            validator = {{contractName}}Validator(tron_provider, contract_address)
+
+        # if any middleware was imported, inject it
+        try:
+            MIDDLEWARE
+        except NameError:
+            pass
+        else:
+            pass
+
+        self._tron_trx = tron_provider.trx
+
+        {{#if methods}}
+        abi_dict = {{contractName}}.abi()
+        contract = self._tron_trx.contract(address=contract_address, abi=abi_dict)
+        owner = self._tron_trx.tron.default_address
+        fn = contract.functions
+
+        {{#each methods}}
+        self._fn_{{toPythonIdentifier this.languageSpecificName}} = {{toPythonClassname this.languageSpecificName}}Method(fn.get_abi_by_name('{{this.name}}'), contract, owner, contract_address{{#if this.inputs}}, validator{{/if}})
+        {{/each}}
+        {{/if}}
+        {{#if events}}
+        {{#each events}}
+        self._ev_{{toPythonIdentifier this.languageSpecificName}} = {{toPythonClassname this.languageSpecificName}}Tracker(False,False)
+        {{/each}}
+        {{/if}}
+
+
+{{#each events}}
+    {{> impl_event contractName=../contractName}}
+{{/each}}
+
+{{#each methods}}
+    {{> impl_method contractName=../contractName}}
+{{/each}}
+
+    def CallContractFee(self, amount:int)-> "{{contractName}}":
+        self.call_contract_fee_amount = amount
+        return self
+
+    def CallDebug(self, yesno: bool) -> "{{contractName}}":
+        self.call_contract_debug_flag = yesno
+        return self
+
+    @staticmethod
+    def abi() -> dict:
+        """Return the ABI to the underlying contract."""
+        return json.loads(
+            '{{{ABIString}}}'  # noqa: E501 (line-too-long)
+        )
+
+# pylint: disable=too-many-lines

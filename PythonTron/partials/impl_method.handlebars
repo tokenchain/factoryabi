@@ -1,0 +1,17 @@
+
+def {{toPythonIdentifier this.languageSpecificName}}(self{{#if this.inputs}},{{> typed_params inputs_intern=this.inputs}}{{#if (equal this.stateMutability 'payable')}}, trx:int=0{{/if}}{{else}}{{#if (equal this.stateMutability 'payable')}}, trx:int=0{{/if}}{{/if}}) -> {{> call_return_type outputs=outputs type='call'~}}:
+    """
+
+    The implementation of {{toPythonIdentifier this.languageSpecificName}} in contract {{contractName}}
+
+    """
+    {{#if (equal this.stateMutability 'view')}}t = {{/if}}{{#if (equal this.stateMutability 'pure')}}t = {{/if}}{{#if (equal this.stateMutability 'constant')}}t = {{/if}}self._fn_{{toPythonIdentifier this.languageSpecificName}}{{#if (equal this.stateMutability 'payable')}}.send_call({{#if inputs}}{{> params }}, {{/if}}trx,self.call_contract_fee_amount,self.call_contract_debug_flag){{/if}}{{#if (equal this.stateMutability 'nonpayable')}}.send_call({{#if inputs}}{{> params }}, {{/if}}0,self.call_contract_fee_amount,self.call_contract_debug_flag){{/if}}{{#if (equal this.stateMutability 'view')}}.call({{#if inputs}}{{> params }}{{/if}}){{/if}}{{#if (equal this.stateMutability 'pure')}}.call({{#if inputs}}{{> params }}{{/if}}){{/if}}
+
+    {{#if (equal this.stateMutability 'view')}}return t{{/if}}
+
+    {{#if (equal this.stateMutability 'pure')}}return t{{/if}}
+
+    {{#if (equal this.stateMutability 'constant')}}return t{{/if}}
+
+def {{toPythonIdentifier this.languageSpecificName}}Chain(self)-> {{toPythonClassname this.languageSpecificName}}Method:
+    return self._fn_{{toPythonIdentifier this.languageSpecificName}}

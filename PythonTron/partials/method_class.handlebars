@@ -1,0 +1,64 @@
+
+class {{toPythonClassname this.languageSpecificName}}Method(ContractMethod): # pylint: disable=invalid-name
+    """Various interfaces to the {{this.name}} method."""
+
+    def __init__(self, abi: dict, contract: Contract,  owner_address: str, contract_address: str{{#if inputs}}, validator: Validator=None{{/if}}):
+        """Persist instance data."""
+        super().__init__(abi, contract, owner_address, contract_address{{#if inputs}}, validator{{/if}})
+
+
+
+
+    def call(self{{#if inputs}}, {{> typed_params inputs_intern=this.inputs}}{{/if}}) -> {{> call_return_type outputs=outputs type='call'~}}:
+        """Execute underlying contract method via __call__.
+{{sanitizeDevdocDetails this.name this.devdoc.details 8}}{{~#if this.devdoc.params~}}{{#each this.devdoc.params}}
+{{makeParameterDocstringRole @key this 8}}{{/each}}{{/if}}
+        :param tx_params: transaction parameters
+{{#if this.constant~}}
+{{#if this.devdoc.return}}
+{{makeReturnDocstringRole this.devdoc.return 8}}{{/if}}
+{{else}}
+        :returns: the return value of the underlying method.
+        {{makeOutputsValue 'returned' outputs}}
+{{/if}}
+        """
+        {{#hasReturnValue}}returned = {{/hasReturnValue}}super().__call__({{> params}})
+
+
+{{#hasReturnValue}}
+        return returned
+{{/hasReturnValue}}
+
+
+
+{{^if this.constant}}
+    def send_call(self{{#if inputs}}, {{> typed_params inputs_intern=this.inputs}}{{/if}}, trx = 0, fee=900000, debug=False) -> {{> call_return_type outputs=outputs type='send_call'~}}:
+        """Execute underlying contract method via eth_sendTransaction.
+{{sanitizeDevdocDetails this.name this.devdoc.details 8}}{{~#if this.devdoc.params~}}{{#each this.devdoc.params}}
+{{makeParameterDocstringRole @key this 8}}{{/each}}{{/if}}
+        :param tx_params: transaction parameters
+        """
+        super().setContractFee(fee).setContractDebug(debug).sendTrx(trx)
+        return self.call({{> params}})
+{{/if}}
+
+
+
+{{#if inputs}}
+    def validate_and_normalize_inputs(self, {{> typed_params inputs_intern=inputs}}):
+        """Validate the inputs to the {{this.name}} method."""
+{{#each this.inputs}}
+        self.validator.assert_valid(
+            method_name='{{../name}}',
+            parameter_name='{{name}}',
+            argument_value={{toPythonIdentifier name}},
+        )
+{{#if (equal type 'address')}}
+        {{toPythonIdentifier this.name}} = self.validate_and_checksum_address({{toPythonIdentifier this.name}})
+{{else if (equal type 'uint256')}}
+        # safeguard against fractional inputs
+        {{toPythonIdentifier this.name}} = int({{toPythonIdentifier this.name}})
+{{/if}}
+{{/each}}
+        return ({{> params }})
+{{/if}}

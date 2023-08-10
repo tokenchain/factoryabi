@@ -1,0 +1,19 @@
+class {{toPythonClassname this.languageSpecificName}}Tracker(EventTracker): # pylint: disable=invalid-name
+
+    def __init__(self, forceStart: any = False, debug: bool = False):
+        """Persist instance data."""
+        self.tron = None
+        self.contract_address = None
+        super().__init__(forceStart, debug)
+
+    def setTronInstance(self, _tron: any, _contract_address: str) -> None:
+        self.tron = _tron
+        self.contract_address = _contract_address
+
+    def trackOnce(self) -> None:
+        events = self.trackEvent(self.tron, "{{name}}", self.contract_address)
+        if len(events) > 0:
+            for c in events:
+                if "transaction_id" in c and "result" in c and self.isCallBackReady():
+                    self.callback_event_found({{#each inputs}}c["result"]["{{this.name}}"],{{/each}}c["block_number"],c["block_timestamp"])
+

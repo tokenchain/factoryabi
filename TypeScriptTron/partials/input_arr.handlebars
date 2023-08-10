@@ -1,0 +1,10 @@
+{{#if inputs}}
+        let listparams: Array<Param> = [
+{{#each inputs}}
+                {
+                value: {{name}},
+                type:  "{{#parameterType type components}}{{/parameterType}}"
+                }{{#unless @last}}, {{/unless}}
+{{/each}}
+        ]
+{{/if}}

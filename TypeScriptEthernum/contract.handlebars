@@ -1,0 +1,334 @@
+/* DO NOT EDIT THE BELOW FILE AS THIS IS LIKELY WILL BE GENERATED AGAIN AND REWRITE OVER IT */
+
+// tslint:disable:no-consecutive-blank-lines ordered-imports align trailing-comma enum-naming
+// tslint:disable:whitespace no-unbound-method no-trailing-whitespace
+// tslint:disable:no-unused-variable
+
+import * as ethers from "ethers"
+// eslint-disable-next-line import/named
+import {
+  assert,
+  schemas,
+  // eslint-disable-next-line import/named
+  SubscriptionManager,
+  // eslint-disable-next-line import/named
+  BaseContract,
+  // eslint-disable-next-line import/named
+  EventCallback,
+  // eslint-disable-next-line import/named
+  IndexedFilterValues,
+  // eslint-disable-next-line import/named
+  BlockRange,
+  // eslint-disable-next-line import/named
+  DecodedLogArgs,
+  // eslint-disable-next-line import/named
+  LogWithDecodedArgs,
+  // eslint-disable-next-line import/named
+  MethodAbi
+} from "vue-blocklink"
+
+import {
+  BatchRequest,
+  Extension,
+  Log,
+  PromiEvent,
+  provider,
+  Providers,
+  RLPEncodedTransaction,
+  Transaction,
+  TransactionConfig,
+  TransactionReceipt,
+  Common,
+  hardfork,
+  chain,
+  BlockNumber,
+  LogsOptions,
+  PastLogsOptions
+} from "web3-core"
+
+import { Utils, AbiItem } from "web3-utils"
+import Web3 from "web3"
+import BN from "BN.js"
+
+// tslint:enable:no-unused-variable
+export interface ContractInterface {
+{{#each methods}}
+    {{name}}({{#if inputs}}{{> typed_params inputs=inputs}}{{/if}}{{#if isPayable}}coin: BN{{/if}}):Promise<{{> return_type outputs=outputs}}>
+{{/each}}
+}
+
+{{#if events}}
+
+
+
+
+export enum {{contractName}}Events {
+    {{#each events}}
+    {{name}} = '{{name}}',
+    {{/each}}
+}
+
+{{#each events}}
+{{> event}}
+
+{{/each}}
+
+export type {{contractName}}EventArgs =
+{{#each events}}
+    | {{@root.contractName}}{{name}}EventArgs{{#if @last}};{{/if}}
+{{/each}}
+
+
+{{/if}}
+
+
+/* istanbul ignore next */
+// tslint:disable:array-type
+// tslint:disable:no-parameter-reassignment
+// tslint:disable-next-line:class-name
+export class {{contractName}}Contract extends BaseContract implements ContractInterface{
+    /**
+     * @ignore
+     */
+    {{#ifEquals this.deployedBytecode undefined~}}
+    public static deployedBytecode: string | undefined;
+    {{else~}}
+    public static deployedBytecode = '{{this.deployedBytecode}}';
+    {{/ifEquals~}}
+    public static readonly contractName = '{{contractName}}';
+    private readonly _methodABIIndex: { [name: string]: number } = {};
+    {{#if events}}
+    //todo: we will come back and fix it later not generic Error @https://www.typescriptlang.org/docs/handbook/2/conditional-types.html
+    // @ts-ignore
+    private readonly _subscriptionManager: SubscriptionManager<{{contractName}}EventArgs, {{contractName}}Events>;
+    {{/if}}
+
+
+    public static Instance(): ({{contractName}}Contract | any | boolean) {
+        if (window && window.hasOwnProperty("__eth_contract_{{contractName}}")) {
+          // @ts-ignore
+          const obj = window.__eth_contract_{{contractName}}
+          if (obj instanceof {{contractName}}Contract) {
+            return (obj) as {{contractName}}Contract
+          } else {
+            return (obj) as {{contractName}}Contract
+          }
+        } else {
+          return false
+        }
+    }
+
+    static async init(
+        contract_address: string,
+        supportedProvider: provider,
+        ww3: Web3
+        ):Promise<{{contractName}}Contract>
+    {
+        const contractInstance = await new {{contractName}}Contract(
+            contract_address,
+            supportedProvider,
+            ww3
+        );
+
+        contractInstance.constructorArgs = [/** {{> params inputs=ctor.inputs}} **/];
+
+        if (window && !window.hasOwnProperty("__eth_contract_{{contractName}}")) {
+            // @ts-ignore
+            window.__eth_contract_{{contractName}} = contractInstance
+        }
+
+        return contractInstance
+    }
+
+    /**
+     * @returns The contract ABI
+     */
+    public static ABI(): AbiItem[] {
+        const abi = [
+            {{#each ABI}}
+            { {{#if (isDefined this.constant)}}
+                constant: {{constant}},{{/if}}{{#if (isDefined this.anonymous)}}
+                anonymous: {{anonymous}},{{/if}}
+                inputs: [
+                    {{#each inputs}}
+                    {{> abi_type this}}
+                    {{/each}}
+                ],{{#this.name}}
+                name: '{{{this}}}',{{/this.name}}
+                outputs: [
+                    {{#each outputs}}
+                    {{> abi_type this}}
+                    {{/each}}
+                ],{{#if (isDefined this.payable)}}
+                payable: {{payable}},{{/if}}{{#this.stateMutability}}
+                stateMutability: '{{this}}',{{/this.stateMutability}}
+                type: '{{type}}',
+            },
+            {{/each}}
+        ] as AbiItem[];
+        return abi;
+    }
+
+    /**
+     the listed content for the contract functions
+    **/
+    {{#each methods}}
+
+    {{#if this.devdoc.details}}
+    /**
+     * {{formatDocstringForMethodTs this.devdoc.details}}
+    {{> params_docstring inputs=inputs docstrings=devdoc.params}}
+    {{#if devdoc.return}}
+    * @returns {{devdoc.return}}
+    {{/if}}
+     */
+    {{/if}}
+    public async {{languageSpecificName}}({{> typed_params inputs=this.inputs}}{{#if isPayable}}valCoin: BN{{/if}}): Promise<{{> return_type outputs=outputs ~}}> {
+        const self = this as any as {{../contractName}}Contract;
+
+        {{#each inputs}}
+            {{#assertionType name type}}{{/assertionType}}
+        {{/each}}
+
+        const promizz = self._contract.methods.{{languageSpecificName}}(
+        {{#each inputs}}
+            {{name}},
+        {{/each}})
+
+        const _essence = {
+            from: this._blockwrap.getAccountAddress(),
+            gas: this.gas,
+            gasPrice: this.gasPrice{{#if isPayable}}, value: valCoin{{/if}}
+        };
+
+
+        {{#if isPureOrView}}
+        const result = await promizz.call(_essence);
+        {{else~}}
+        const result = await promizz.send(_essence)
+        .on('transactionHash', (hash) => {
+            this.onBroadcast(hash);
+        }).on('confirmation', (confirmationNumber, receipt) => {
+            this.onConfirmation(receipt);
+        }).on('receipt', (r) => {
+            this.pushReceiptSuccess(r);
+        }).on('error', (error, receipt) => {
+            this.onError(receipt, error);
+        }).catch((e) => {
+            this.catchErro(e)
+        });
+        {{/if}}
+
+        return result;
+    };
+
+
+    public async {{languageSpecificName}}Gas({{> typed_params inputs=this.inputs}}): Promise<number>{
+        const self = this as any as {{../contractName}}Contract;
+        const gasAmount = await self._contract.methods.{{languageSpecificName}}({{#each inputs}}{{name}},{{/each}}).estimateGas();
+        return gasAmount;
+    };
+
+    {{/each}}
+
+    {{#if events}}
+    /**
+     * Subscribe to an event type emitted by the {{contractName}} contract.
+     * @param eventName The {{contractName}} contract event you would like to subscribe to.
+     * @param indexFilterValues An object where the keys are indexed args returned by the event and
+     * the value is the value you are interested in. E.g `{maker: aUserAddressHex}`
+     * @param callback Callback that gets called when a log is added/removed
+     * @param isVerbose Enable verbose subscription warnings (e.g recoverable network issues encountered)
+     * @return Subscription token used later to unsubscribe
+     */
+    public subscribe<ArgsType extends {{contractName}}EventArgs>(
+        eventName: {{contractName}}Events,
+        indexFilterValues: IndexedFilterValues,
+        callback: EventCallback<ArgsType>,
+        isVerbose: boolean = false,
+        blockPollingIntervalMs?: number,
+    ): string {
+        assert.doesBelongToStringEnum('eventName', eventName, {{contractName}}Events);
+        assert.doesConformToSchema('indexFilterValues', indexFilterValues, schemas.indexFilterValuesSchema);
+        assert.isFunction('callback', callback);
+        const subscriptionToken = this._subscriptionManager.subscribe<ArgsType>(
+            this._address,
+            eventName,
+            indexFilterValues,
+            {{contractName}}Contract.ABI(),
+            callback,
+            isVerbose,
+            blockPollingIntervalMs,
+        );
+        return subscriptionToken;
+    }
+
+    /**
+     * Cancel a subscription
+     * @param subscriptionToken Subscription token returned by `subscribe()`
+     */
+    public unsubscribe(subscriptionToken: string): void {
+        this._subscriptionManager.unsubscribe(subscriptionToken);
+    }
+
+    /**
+     * Cancels all existing subscriptions
+     */
+    public unsubscribeAll(): void {
+        this._subscriptionManager.unsubscribeAll();
+    }
+
+
+    /**
+     * Gets historical logs without creating a subscription
+     * @param eventName The {{contractName}} contract event you would like to subscribe to.
+     * @param blockRange Block range to get logs from.
+     * @param indexFilterValues An object where the keys are indexed args returned by the event and
+     * the value is the value you are interested in. E.g `{_from: aUserAddressHex}`
+     * @return Array of logs that match the parameters
+     */
+    public async getLogsAsync<ArgsType extends {{contractName}}EventArgs>(
+        eventName: {{contractName}}Events,
+        blockRange: BlockRange,
+        indexFilterValues: IndexedFilterValues,
+    ): Promise<Array<LogWithDecodedArgs<ArgsType>>> {
+        assert.doesBelongToStringEnum('eventName', eventName, {{contractName}}Events);
+        assert.doesConformToSchema('blockRange', blockRange, schemas.blockRangeSchema);
+        assert.doesConformToSchema('indexFilterValues', indexFilterValues, schemas.indexFilterValuesSchema);
+        const logs = await this._subscriptionManager.getLogsAsync<ArgsType>(
+            this._address,
+            eventName,
+            blockRange,
+            indexFilterValues,
+            {{contractName}}Contract.ABI(),
+        );
+        return logs;
+    }{{/if}}
+
+    constructor(
+        address: string,
+        supportedProvider: provider,
+        ww3: Web3
+    ) {
+        super('{{contractName}}', {{contractName}}Contract.ABI(), address, supportedProvider,ww3);
+        {{#if events}}
+        this._subscriptionManager = new SubscriptionManager(
+            {{contractName}}Contract.ABI(),
+            supportedProvider,
+        );
+        {{/if}}
+
+        {{contractName}}Contract.ABI().forEach((item, index) => {
+            if (item.type === 'function') {
+                const methodAbi = item as MethodAbi;
+                this._methodABIIndex[methodAbi.name] = index;
+            }
+        });
+
+
+    }
+}
+
+// tslint:disable:max-file-line-count
+// tslint:enable:no-unbound-method no-parameter-reassignment no-consecutive-blank-lines ordered-imports align
+// tslint:enable:trailing-comma whitespace no-trailing-whitespace

@@ -1,0 +1,8 @@
+#!/bin/sh
+. ./n.sh
+#tsc -b
+GIT_LOC=https://gitlab.com/b95token/factoryabi
+VERSION=$(cat version)
+increment_version $VERSION > version
+VERSION=$(cat version)
+gitpush

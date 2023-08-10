@@ -1,0 +1,15 @@
+{{~#hasOutputs~}}
+{{^if this.constant}}
+Union[
+{{~/if~}}
+{{~#hasReturnValue}}
+{{~#singleReturnValue}}
+{{#returnType outputs.[0]}}{{~/returnType~}}
+{{/singleReturnValue}}
+{{^singleReturnValue}}
+Tuple[{{#each outputs}}{{returnType this}}{{#unless @last}}, {{/unless}}{{/each}}]
+{{~/singleReturnValue}}
+{{else}}None
+{{/hasReturnValue}}{{^if this.constant}}, Union[HexBytes, bytes]]{{/if~}}
+{{else}}{{#if this.constant}}None{{else}}Union[None, Union[HexBytes, bytes]]{{/if}}
+{{~/hasOutputs~}}

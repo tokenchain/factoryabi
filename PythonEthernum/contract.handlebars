@@ -1,0 +1,145 @@
+"""Generated wrapper for {{contractName}} Solidity contract."""
+
+# pylint: disable=too-many-arguments
+
+import json
+from typing import (  # pylint: disable=unused-import
+    Any,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+import time
+from eth_utils import to_checksum_address
+from mypy_extensions import TypedDict  # pylint: disable=unused-import
+from hexbytes import HexBytes
+from web3 import Web3
+from web3.contract import ContractFunction
+from web3.datastructures import AttributeDict
+from web3.providers.base import BaseProvider
+from web3.exceptions import ContractLogicError
+from moody.m.bases import ContractMethod, Validator, ContractBase, Signatures
+from moody.m.tx_params import TxParams
+from moody.libeb import MiliDoS
+from moody import Bolors
+
+# Try to import a custom validator class definition; if there isn't one,
+# declare one that we can instantiate for the default argument to the
+# constructor for {{contractName}} below.
+try:
+    # both mypy and pylint complain about what we're doing here, but this
+    # works just fine, so their messages have been disabled here.
+    from . import (  # type: ignore # pylint: disable=import-self
+        {{contractName}}Validator,
+    )
+except ImportError:
+
+    class {{contractName}}Validator(  # type: ignore
+        Validator
+    ):
+        """No-op input validator."""
+
+try:
+    from .middleware import MIDDLEWARE  # type: ignore
+except ImportError:
+    pass
+
+
+{{tupleDefinitions ABIString}}
+
+{{#each methods}}
+{{> method_class contractName=../contractName}}
+{{/each}}
+
+class SignatureGenerator(Signatures):
+    """
+        The signature is generated for this and it is installed.
+    """
+    def __init__(self, abi: any):
+        super().__init__(abi)
+
+{{#each methods}}
+    def {{toPythonIdentifier this.languageSpecificName}}(self) -> str:
+        return self._function_signatures["{{this.name}}"]
+{{/each}}
+
+# pylint: disable=too-many-public-methods,too-many-instance-attributes
+class {{contractName}}(ContractBase):
+    """Wrapper class for {{contractName}} Solidity contract.{{docBytesIfNecessary ABIString}}"""
+{{#each methods}}
+    _fn_{{toPythonIdentifier this.languageSpecificName}}: {{toPythonClassname this.languageSpecificName}}Method
+    """Constructor-initialized instance of
+    :class:`{{toPythonClassname this.languageSpecificName}}Method`.
+    """
+
+{{/each}}
+    SIGNATURES:SignatureGenerator = None
+
+    def __init__(
+        self,
+        core_lib: MiliDoS,
+        contract_address: str,
+        validator: {{contractName}}Validator = None,
+    ):
+        """Get an instance of wrapper for smart contract.
+        """
+        # pylint: disable=too-many-statements
+        super().__init__(contract_address, {{contractName}}.abi())
+        web3 = core_lib.w3
+
+        if not validator:
+            validator = {{contractName}}Validator(web3, contract_address)
+
+
+
+
+        # if any middleware was imported, inject it
+        try:
+            MIDDLEWARE
+        except NameError:
+            pass
+        else:
+            try:
+                for middleware in MIDDLEWARE:
+                    web3.middleware_onion.inject(
+                         middleware['function'], layer=middleware['layer'],
+                    )
+            except ValueError as value_error:
+                if value_error.args == ("You can't add the same un-named instance twice",):
+                    pass
+
+        self._web3_eth = web3.eth
+        {{#if methods}}
+        functions = self._web3_eth.contract(address=to_checksum_address(contract_address), abi={{contractName}}.abi()).functions
+        self._signatures = SignatureGenerator({{contractName}}.abi())
+        validator.bindSignatures(self._signatures)
+
+        {{#each methods}}
+        self._fn_{{toPythonIdentifier this.languageSpecificName}} = {{toPythonClassname this.languageSpecificName}}Method(core_lib, contract_address, functions.{{this.name}}, validator)
+        {{/each}}
+        {{/if}}
+
+{{#each events}}
+    {{> impl_event contractName=../contractName}}
+{{/each}}
+
+{{#each methods}}
+    {{> impl_method contractName=../contractName}}
+{{/each}}
+
+    def CallContractWait(self, t_long:int)-> "{{contractName}}":
+        {{#each methods}}
+        self._fn_{{toPythonIdentifier this.languageSpecificName}}.setWait(t_long)
+        {{/each}}
+        return self
+
+
+    @staticmethod
+    def abi():
+        """Return the ABI to the underlying contract."""
+        return json.loads(
+            '{{{ABIString}}}'  # noqa: E501 (line-too-long)
+        )
+
+# pylint: disable=too-many-lines

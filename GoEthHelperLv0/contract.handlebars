@@ -1,0 +1,262 @@
+package {{contractName}}
+
+import (
+    "github.com/ethereum/go-ethereum/crypto"
+    "github.com/ethereum/go-ethereum/ethclient"
+    "github.com/ethereum/go-ethereum/common"
+    "github.com/ethereum/go-ethereum/accounts/abi/bind"
+    "log"
+    "math/big"
+    "context"
+    "go.uber.org/atomic"
+    "github.com/GoLandr/ryutil"
+)
+
+const (
+    RINKEBY1     = "wss://rinkeby.infura.io/ws/v3/2019a99711c648f8951a640e8031ca33"
+    RINKEBY2     = "wss://rinkeby.infura.io/ws/v3/c96c155a852242698215e8c1559314fd"
+    MAINNET      = "wss://mainnet.infura.io/ws/v3/2019a99711c648f8951a640e8031ca33"
+    MAINNET2     = "http://47.244.194.253:8545"
+    LIMIT        = 100000
+)
+
+type (
+    Contract{{contractName}} interface {
+        Init()
+        ScanNow()
+        GemRelease()
+        ScanReleaseCandy()
+        MyAddress() string
+        ReadConf(func())
+        ScanMembers(*atomic.Int64)
+        ScanOrders(*atomic.Int64)
+        DailyJob(*atomic.Int64)
+        KeyDistri(*atomic.Int64)
+        GetConfig() *Config
+    }
+    ihelp{{contractName}} struct {
+        contractAddress     common.Address
+        priv_key            *bind.TransactOpts
+        j                   *bind.CallOpts
+        network_loc         string
+        networkName         string
+        client              *ethclient.Client
+        investLen           *atomic.Int64
+        currentIndex        *atomic.Int64
+        contractLocked      *atomic.Int64
+        currentRound        *atomic.Int64
+        lineMode            *atomic.Bool
+        whitelistedaddress  *atomic.Bool
+        loopScanUsers       *atomic.Bool
+        loopScanCandyBlock  *atomic.Bool
+        loopMemberNodeCount *atomic.Bool
+        instance            *MasonicV3
+        display_config     *Config
+    }
+
+    Config struct {
+        ReadTime       int64
+        FaucetTime     int64
+        LineUpTime     int64
+        ScanMemberTime int64
+        KeyReleaseTime int64
+    }
+)
+
+var _ Contract{{contractName}} = &ihelp{{contractName}}{}
+
+func (f *ihelp{{contractName}}) Self() Contract{{contractName}} {
+    var g Contract{{contractName}} = f
+    return g
+}
+func SwapNetwork(net string) *ethclient.Client {
+    client, err := ethclient.Dial(net)
+    if err != nil {
+        log.Fatal(err)
+    }
+    return client
+}
+func NewEthContract(address, priv, networkName string) *ihelp{{contractName}} {
+    var network string
+    if networkName == "rinkeby" {
+        network = RINKEBY1
+    } else {
+        network = MAINNET
+    }
+    if networkName == "" {
+        return nil
+    }
+    key, err := crypto.HexToECDSA(priv)
+    if err != nil {
+        log.Fatal(err)
+    }
+    client := SwapNetwork(network)
+    /**
+     * Connecting to contracts at an address
+     */
+    contractAddress := common.HexToAddress(address)
+    contractClient, err := NewMasonicV3(contractAddress, client)
+    if err != nil {
+        log.Fatal(err)
+    }
+    bTransactor := bind.NewKeyedTransactor(key)
+    walletAddress := crypto.PubkeyToAddress(key.PublicKey)
+    callOptsExi := &bind.CallOpts{Pending: true, From: walletAddress}
+    info := &masonicPc{
+        contractAddress,
+        bTransactor,
+        callOptsExi,
+        network,
+        networkName,
+        client,
+        atomic.NewInt64(0),
+        atomic.NewInt64(0),
+        atomic.NewInt64(0),
+        atomic.NewInt64(0),
+        atomic.NewBool(false),
+        atomic.NewBool(false),
+        atomic.NewBool(false),
+        atomic.NewBool(false),
+        atomic.NewBool(false),
+        contractClient,
+        &Config{
+            10, 0, 0,0,0,
+        },
+    }
+    //info.self = info
+    return info
+}
+func (c *ihelp{{contractName}}) getMyWalletAddress() common.Address {
+    return c.priv_key.From
+}
+func (h *ihelp{{contractName}}) canCheck() bool {
+    can := h.whitelistedaddress.Load()
+    if !can {
+        ryutil.Error("WARNING: CURRENT WALLET ADDRESS IS NOT WHITELISTED")
+    }
+    return can
+}
+func (h *ihelp{{contractName}}) updateMeta() {
+    a0, a1, _, a3, _, _, _, _, _, a9, a10, _, _, _, err := h.instance.Shenzhen(h.j)
+    if err != nil {
+        ryutil.Errorf("Failed to unpack:", err)
+        return
+    }
+    h.investLen.Store(a3.Int64())
+    h.currentIndex.Store(a1.Int64())
+    h.contractLocked.Store(a9.Int64())
+    h.currentRound.Store(a0.Int64())
+    if a10.Int64() == 0 {
+        h.lineMode.Store(false)
+    } else {
+        h.lineMode.Store(true)
+    }
+    whitelisted, err := h.instance.IsWhitelistAdmin(h.j, h.getMyWalletAddress())
+    if err != nil {
+        ryutil.Errorf("Failed to unpack:", err)
+    }
+    if !whitelisted {
+        ryutil.Error("WARNING: CURRENT WALLET ADDRESS IS NOT WHITELISTED")
+    }
+    h.whitelistedaddress.Store(whitelisted)
+    //  ryutil.Infof("Failed to unpack: ", _q1, _q2, _q3)
+    //  a, b, g, err := h.instance.Test(h.pending)
+}
+func (c *ihelp{{contractName}}) countKeys() {
+    ryutil.Info("time for key distribution:")
+}
+func (c *ihelp{{contractName}}) creditCount() {
+    if !c.canCheck() {
+        return
+    }
+    start := big.NewInt(0)
+    end := big.NewInt(c.investLen.Load())
+    if end.Int64() == 0 {
+        ryutil.Error("investors count is zero")
+        return
+    }
+    tx_ext, err := c.instance.Faucet(c.priv_key, start, end)
+    if err != nil {
+        ryutil.Error("direct share award calculations failed")
+    }
+    ryutil.Infof("Daily M credit release TX: 0x%x\n", tx_ext.Hash())
+}
+func (c *ihelp{{contractName}}) callEnqueneProcess() {
+    if !c.canCheck() {
+        return
+    }
+
+    round, userTotal, _, paidUserTotal, _, _, _, _, _, locked, lineIn, _, _, _, err := c.instance.Shenzhen(c.j)
+    if err != nil {
+        ryutil.Errorf("Failed to unpack:", err)
+        return
+    }
+
+    g := paidUserTotal.Int64() - userTotal.Int64()
+    start := big.NewInt(c.investLen.Load())
+    end := big.NewInt(paidUserTotal.Int64())
+
+    if g == 0 {
+        return
+    }
+
+
+    previousGas := c.priv_key.GasLimit
+    previousPrice := c.priv_key.GasPrice
+    price, e := c.client.SuggestGasPrice(context.Background())
+    if e != nil {
+        ryutil.Error("failed to make suggestion on the gas price")
+        return
+    }
+    c.priv_key.GasPrice = price
+    c.priv_key.GasLimit = uint64(692000)
+    //v := 0
+    /*if c.lineMode.Load() {
+        v = 1
+    }*/
+    tx3, err := c.instance.Oxoxcount(c.priv_key, start, end)
+    if err != nil {
+        ryutil.Errorf("award distribution also failed %s", err.Error())
+        return
+    }
+    c.priv_key.GasLimit = previousGas
+    c.priv_key.GasPrice = previousPrice
+    ryutil.Infof("Daily M TX3: 0x%x\n", tx3.Hash())
+
+
+    if lineIn.Int64() == 0 {
+        c.lineMode.Store(false)
+    } else {
+        c.lineMode.Store(true)
+    }
+    c.investLen.Store(paidUserTotal.Int64())
+    c.currentIndex.Store(userTotal.Int64())
+    c.contractLocked.Store(locked.Int64())
+    c.currentRound.Store(round.Int64())
+}
+
+
+func (c *ihelp{{contractName}}) callReleaseCandy(lucky_address string) {
+    if !c.canCheck() {
+        return
+    }
+    previousGas := c.priv_key.GasLimit
+    previousPrice := c.priv_key.GasPrice
+    price, e := c.client.SuggestGasPrice(context.Background())
+    if e != nil {
+        ryutil.Error("failed to make suggestion on the gas price")
+        return
+    }
+    c.priv_key.GasPrice = price
+    c.priv_key.GasLimit = uint64(692000)
+    tx3, err := c.instance.CreditKey(c.priv_key, common.HexToAddress(lucky_address))
+    if err != nil {
+        ryutil.Errorf("key distribution also failed %s", err.Error())
+        return
+    }
+    c.priv_key.GasLimit = previousGas
+    c.priv_key.GasPrice = previousPrice
+    ryutil.Infof("Release credit to TX0: 0x%x\n", tx3.Hash())
+}
+
+

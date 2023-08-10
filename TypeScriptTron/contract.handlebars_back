@@ -1,0 +1,200 @@
+/* DO NOT EDIT THE BELOW FILE AS THIS IS LIKELY WILL BE GENERATED AGAIN AND REWRITE OVER IT */
+// tslint:disable:no-consecutive-blank-lines ordered-imports align trailing-comma enum-naming
+// tslint:disable:whitespace no-unbound-method no-trailing-whitespace no-camelcase
+// tslint:disable:no-unused-variable
+import TronWeb, {BigNumber, version, Contract} from "tronweb"
+import BaseContract from "./base/base"
+// eslint-disable-next-line import/named
+import {ContractAbi} from "./base/types"
+{{#if events}}
+    {{#each events}}
+export interface {{contractName}}{{this.name}}EventArgs {
+        {{#each inputs}}
+    {{name}}: {{#returnType type components}}{{/returnType}};
+        {{/each}}
+}
+    {{/each}}
+{{/if}}
+
+type Param = {
+    type: string,
+    value: any
+}
+
+export interface ContractInterface {
+{{#each methods}}
+    {{name}}({{#if inputs}}{{> typed_params inputs=inputs}}{{/if}}):Promise<{{> return_type outputs=outputs}}>
+{{/each}}
+}
+
+// @ts-ignore
+export class {{contractName}} extends BaseContract implements ContractInterface {
+
+{{#ifEquals this.deployedBytecode undefined~}}
+    public static deployedBytecode: string | undefined;
+{{else~}}
+    public static deployedBytecode = "{{this.deployedBytecode}}";
+{{/ifEquals~}}
+
+  
+
+    public static contractName = "{{contractName}}";
+    __debug:boolean = true;
+
+    tronweb: TronWeb = null;
+    contract: Contract;
+    contract_address_t: string;
+    based_version: string = version;
+
+    constructor(tron: TronWeb) {
+        super();
+        this.tronweb = tron
+    }
+
+    public static Instance(): ({{contractName}} | any | boolean) {
+        if (window && window.hasOwnProperty("___contract__{{contractName}}__")) {
+          // @ts-ignore
+          const obj = window.___contract__{{contractName}}__
+          if (obj instanceof {{contractName}}) {
+            return (obj) as {{contractName}}
+          } else {
+            return (obj) as {{contractName}}
+          }
+        } else {
+          return false
+        }
+    }
+
+    async init(contract_address: string) {
+        this.contract = await new Contract(this.tronweb, {{contractName}}.ABI(), contract_address);
+        /**this.contract = await this.tronweb.contract().new({
+            abi:CONTRACT_ABI,
+            bytecode: {{contractName}}.deployedBytecode
+        });**/
+        this.contract_address_t = contract_address;
+        if (window && !window.hasOwnProperty("___contract__{{contractName}}__")) {
+            // @ts-ignore
+            window.___contract__{{contractName}}__ = this
+        }   
+    }
+
+    setDebug(bool:boolean){
+        this.__debug = bool
+    }
+
+    public isVersionCompatible():boolean {
+      return this.based_version === this.tronweb.version
+    }
+{{#each methods}}
+
+
+    // @ts-ignore
+    public async {{name}}({{#if inputs}}{{> typed_params inputs=inputs}}{{/if}}):Promise<{{> return_type outputs=outputs}}>{
+        let callparams = {
+            userFeePercentage: 30,
+            feeLimit: 100000000,
+            shouldPollResponse:true,
+            _isConstant: {{#ifEquals this.constant true}} true {{else}} false {{/ifEquals}},
+            callValue: {{#ifEquals this.stateMutability 'payable'}} trx {{else}} 0 {{/ifEquals}},
+        }
+        let val = await this.contract.{{name}}({{> input_p inputs=inputs}})
+        {{#ifEquals this.stateMutability 'payable'}} .send(callparams) {{/ifEquals}}{{#ifEquals this.stateMutability 'nonpayable'}} .send(callparams) {{/ifEquals}}{{#ifEquals this.stateMutability 'view'}} .call(callparams) {{/ifEquals}}{{#ifEquals this.stateMutability 'pure'}} .call(callparams) {{/ifEquals}}
+
+            
+{{#ifEquals this.stateMutability 'nonpayable'}}
+        .watch((err, event) => {
+            if(err) {return console.error('Error with "Message" event:', err);}
+            console.group('New event received');
+            console.log('- Contract Address:', event.contract);
+            console.log('- Event Name:', event.name);
+            console.log('- Transaction:', event.transaction);
+            console.log('- Block number:', event.block);
+            console.log('- Result:', event.result, '\n');
+            console.groupEnd();
+        })
+{{/ifEquals}}
+{{#ifEquals this.stateMutability 'payable'}}
+        .watch((err, event) => {
+            if(err) {return console.error('Error with "Message" event:', err);}
+            console.group('New event received');
+            console.log('- Contract Address:', event.contract);
+            console.log('- Event Name:', event.name);
+            console.log('- Transaction:', event.transaction);
+            console.log('- Block number:', event.block);
+            console.log('- Result:', event.result, '\n');
+            console.groupEnd();
+        })
+{{/ifEquals}}
+        ;
+
+
+
+        if(this.__debug){
+            console.group("==> debug return raw 💮 {{name}}");
+            console.log(val);
+            console.groupEnd();
+        }
+        return val
+    }
+{{/each}}
+
+{{#if events}}
+    async startEventListeners():Promise<any> {
+{{#each events}}
+        // @ts-ignore
+        await this.contract && this.contract.{{this.name}}().watch((err, _result) => {
+            if (err) return console.error('Failed to bind event listener:', err);
+    
+            if(_result){
+                let {result,block,transaction,name,contract} = _result;
+
+
+       
+                if (this.__debug){
+                    console.group('New event received');
+                    console.log('- Contract Address:', contract);
+                    console.log('- Event Name:', name);
+                    console.log('- Transaction:',transaction);
+                    console.log('- Block number:', block);
+                    console.log('- Result:', result, '\n');
+                    console.groupEnd();
+                }     
+                this.emit("event_{{this.name}}", result);
+            }
+        
+
+
+        });
+{{/each}}
+    }
+{{/if}}
+   /**
+     * @returns The contract ABI
+     */
+    public static ABI(): ContractAbi {
+        const abi = [
+            {{#each ABI}}
+            { {{#if (isDefined this.constant)}}
+                constant: {{constant}},{{/if}}{{#if (isDefined this.anonymous)}}
+                anonymous: {{anonymous}},{{/if}}
+                inputs: [
+                    {{#each inputs}}
+                    {{> abi_type this}}
+                    {{/each}}
+                ],{{#this.name}}
+                name: '{{{this}}}',{{/this.name}}
+                outputs: [
+                    {{#each outputs}}
+                    {{> abi_type this}}
+                    {{/each}}
+                ],{{#if (isDefined this.payable)}}
+                payable: {{payable}},{{/if}}{{#this.stateMutability}}
+                stateMutability: '{{this}}',{{/this.stateMutability}}
+                type: '{{type}}',
+            },
+            {{/each}}
+        ] as ContractAbi;
+        return abi;
+    }
+}
+

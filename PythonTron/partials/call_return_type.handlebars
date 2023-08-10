@@ -1,0 +1,9 @@
+{{~#hasOutputs~}}
+{{#hasReturnValue}}
+{{#singleReturnValue}}
+{{#returnType outputs.[0]}}{{~/returnType~}}
+{{/singleReturnValue}}
+{{^singleReturnValue}}
+Tuple[{{#each outputs}}{{returnType this}}{{#unless @last}}, {{/unless}}{{/each}}]
+{{~/singleReturnValue}}
+{{else}}None{{/hasReturnValue}}{{else}}None{{/hasOutputs~}}

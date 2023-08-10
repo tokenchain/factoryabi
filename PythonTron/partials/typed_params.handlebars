@@ -1,0 +1,3 @@
+{{#each inputs_intern}}
+{{toPythonIdentifier name}}: {{parameterType this}}{{^if @last}}, {{/if~}}
+{{/each~}}

@@ -1,0 +1,9 @@
+"""
+Implementation of event {{toPythonIdentifier this.languageSpecificName}} in contract {{contractName}}
+Get log entry for {{name}} event.
+{{makeEventParameterDocstringRole name 8}}
+"""
+
+def event_{{this.languageSpecificName}}(self) -> "{{toPythonClassname this.languageSpecificName}}Tracker":
+    self._ev_{{toPythonIdentifier this.languageSpecificName}}.setTronInstance(self._tron_trx.tron, self.contract_address)
+    return self._ev_{{toPythonIdentifier this.languageSpecificName}}
